@@ -25,4 +25,22 @@ public class TelemetryDiagnosticControlsTest {
 
     }
 
+    @Test
+    public void CheckTransmission_should_retry_three_times() throws Exception {
+        ITelemetryClient client = mock(ITelemetryClient.class);
+        when(client.receive()).thenReturn("RECEIVE");
+        when(client.getOnlineStatus()).thenReturn(false).thenReturn(false).thenReturn(true);
+        TelemetryDiagnosticControls telemetryDiagnosticControls = new TelemetryDiagnosticControls(client);
+
+        telemetryDiagnosticControls.checkTransmission();
+
+        verify(client, times(4)).getOnlineStatus();
+        verify(client, times(1)).receive();
+
+        ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
+        verify(client).send(captor.capture());
+        assertEquals(TelemetryClient.DIAGNOSTIC_MESSAGE, captor.getValue());
+
+    }
+
 }
